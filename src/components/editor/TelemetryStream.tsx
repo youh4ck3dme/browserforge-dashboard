@@ -17,6 +17,14 @@ function formatTimestamp(ts: string | { seconds: number }): string {
 }
 
 function jobToEvents(doc: Record<string, unknown>): TelemetryEvent[] {
+  // If the new 'logs' array exists, use it for high-fidelity data
+  if (Array.isArray(doc.logs)) {
+    return doc.logs.map((log: any) => ({
+      timestamp: log.timestamp || "--:--:--",
+      message: log.message || "Unknown event",
+    }));
+  }
+
   const events: TelemetryEvent[] = [];
   const name = (doc.name as string) || (doc.config as Record<string, unknown>)?.name as string || "Unknown";
   const status = (doc.status as string) || "UNKNOWN";

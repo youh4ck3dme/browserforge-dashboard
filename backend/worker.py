@@ -34,26 +34,39 @@ def process_build_job(doc_snapshot, changes, read_time):
                 
                 job_ref = db.collection('build_jobs').document(job_id)
                 
+                def log_event(msg):
+                    print(f"DEBUG [{job_id[:8]}]: {msg}")
+                    # Atomic push to array in Firestore
+                    job_ref.update({
+                        'logs': firestore.ArrayUnion([{
+                            'timestamp': time.strftime("%H:%M:%S"),
+                            'message': msg
+                        }])
+                    })
+
                 try:
                     # 1. Update status to BUILDING
-                    print(f"🔄 Updating status to BUILDING...")
-                    job_ref.update({'status': 'BUILDING'})
-                    time.sleep(2) # Simulating prep time
-                    
-                    # 2. Simulate Compilation progress
-                    stages = ["FETCHING_SOURCE", "APPLYING_FLAGS", "COMPILING", "PACKAGING"]
-                    for stage in stages:
-                        print(f"⚙️ [{stage}] processing...")
-                        job_ref.update({'status': f'BUILDING: {stage}'})
-                        time.sleep(3) # Simulating heavy lifting (in reality this takes hours)
-                        
-                    # 3. Simulate uploading artifact to Storage
-                    print(f"📦 Uploading artifact to Firebase Storage...")
-                    fake_download_url = f"https://browserforge-dl.corp/{config.get('name', 'browser')}_{job_id}.zip"
+                    log_event(f"🚀 Initializing build sequence for {config.get('name', 'browser')}...")
+                    job_ref.update({'status': 'BUILDING', 'logs': []}) # Initialize logs
                     time.sleep(1)
                     
-                    # 4. Finish the job
-                    print(f"✅ Job {job_id} completed successfully!")
+                    # 2. Simulate Compilation progress with real logs
+                    stages = [
+                        ("FETCHING_SOURCE", "Fetching Chromium source v147.0.6914..."),
+                        ("APPLYING_FLAGS", f"Applying security profile: {json.dumps(config.get('flags', {}))}"),
+                        ("COMPILING", "Compiling LLVM modules (parallel-exec)..."),
+                        ("PACKAGING", "Creating production bundle & signing artifact...")
+                    ]
+                    for stage, msg in stages:
+                        log_event(msg)
+                        job_ref.update({'status': f'BUILDING: {stage}'})
+                        time.sleep(3)
+                        
+                    # 3. Finalize
+                    log_event("📦 Build artifact generated successfully.")
+                    fake_download_url = f"https://stephanie-carbon-realistic-garlic.trycloudflare.com/builds/{config.get('name', 'browser')}_{job_id}.zip"
+                    
+                    log_event("✅ Transitioning to status: DONE")
                     job_ref.update({
                         'status': 'DONE',
                         'download_url': fake_download_url
