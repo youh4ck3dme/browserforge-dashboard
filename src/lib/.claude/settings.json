@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Read(//c/Users/42195/.gemini/antigravity/scratch/forge-builder-suite/**)"
+      "Read(//c/Users/42195/.gemini/antigravity/scratch/forge-builder-suite/**)",
+      "Read(//c/Users/42195/.gemini/antigravity/brain/91709952-f7c5-43d5-a23f-6d2437d5425c/**)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\42195\\.gemini\\antigravity\\scratch\\forge-builder-suite\\backend"
     ]
   }
 }
