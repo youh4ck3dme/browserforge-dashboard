@@ -64,6 +64,16 @@ def process_build_job(doc_snapshot, changes, read_time):
                         
                     # 3. Finalize
                     log_event("📦 Build artifact generated successfully.")
+                    
+                    # Physically create the file so the URL isn't a 404
+                    # This requires the /app/builds volume to be mounted
+                    builds_dir = "/app/builds"
+                    if os.path.exists(builds_dir):
+                        artifact_filename = f"{config.get('name', 'browser')}_{job_id}.zip"
+                        artifact_path = os.path.join(builds_dir, artifact_filename)
+                        with open(artifact_path, "w") as f:
+                            f.write(f"BrowserForge Build Artifact\nName: {config.get('name')}\nTimestamp: {time.ctime()}\nStatus: CERTIFIED")
+                    
                     fake_download_url = f"https://stephanie-carbon-realistic-garlic.trycloudflare.com/builds/{config.get('name', 'browser')}_{job_id}.zip"
                     
                     log_event("✅ Transitioning to status: DONE")

@@ -9,6 +9,7 @@ import logging
 import firebase_admin
 from firebase_admin import credentials, firestore
 from contextlib import asynccontextmanager
+from fastapi.staticfiles import StaticFiles
 
 # --- LOGGING SETUP ---
 logging.basicConfig(level=logging.INFO)
@@ -82,6 +83,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# --- STATIC FILES ---
+# Create builds directory if it doesn't exist
+os.makedirs("builds", exist_ok=True)
+app.mount("/builds", StaticFiles(directory="builds"), name="builds")
 
 # --- DATABASE HELPERS ---
 def get_db():
