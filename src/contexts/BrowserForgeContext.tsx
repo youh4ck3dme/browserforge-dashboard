@@ -68,7 +68,7 @@ export const BrowserForgeProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const [pipeline, setPipeline] = useState<PipelineState>({ running: false, currentStage: -1 });
   const [buildResult, setBuildResult] = useState<BuildResult | null>(null);
-  const [apiUrl, setApiUrl] = useState("https://parallel-depend-rehabilitation-texas.trycloudflare.com");
+  const [apiUrl, setApiUrl] = useState("https://stephanie-carbon-realistic-garlic.trycloudflare.com");
 
   const setName = useCallback((name: string) => setConfig((c) => ({ ...c, name })), []);
   const setThemeColor = useCallback((color: string) => setConfig((c) => ({ ...c, themeColor: color })), []);

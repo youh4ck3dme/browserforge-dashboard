@@ -1,50 +1,98 @@
 import { useEffect, useRef, useState } from "react";
+import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
-const LOG_TEMPLATES = [
-  "Blocked {n} analytics pings from build #{b}",
-  "Security Policy synced across {n} instances",
-  "Telemetry endpoint blocked: google-analytics.com/{b}",
-  "Certificate rotation completed for node-{n}",
-  "Anti-fingerprint canvas noise injected in build #{b}",
-  "VPN tunnel established: node-{n} → gateway-{b}",
-  "Chromium patch {b}.{n} applied successfully",
-  "Kiosk lockdown verified on {n} endpoints",
-  "Build #{b} artifact signed with SHA-512",
-  "Fleet sync: {n} browsers updated to v{b}.0",
-];
+interface TelemetryEvent {
+  timestamp: string;
+  message: string;
+}
 
-function randomLog() {
-  const t = LOG_TEMPLATES[Math.floor(Math.random() * LOG_TEMPLATES.length)];
-  return t
-    .replace("{n}", String(Math.floor(Math.random() * 500) + 1))
-    .replace("{b}", String(Math.floor(Math.random() * 200) + 100));
+function formatTimestamp(ts: string | { seconds: number }): string {
+  try {
+    const date = typeof ts === "string" ? new Date(ts) : new Date((ts as { seconds: number }).seconds * 1000);
+    return date.toLocaleTimeString("sk-SK", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  } catch {
+    return "--:--:--";
+  }
+}
+
+function jobToEvents(doc: Record<string, unknown>): TelemetryEvent[] {
+  const events: TelemetryEvent[] = [];
+  const name = (doc.name as string) || (doc.config as Record<string, unknown>)?.name as string || "Unknown";
+  const status = (doc.status as string) || "UNKNOWN";
+  const ts = (doc.timestamp as string) || new Date().toISOString();
+
+  events.push({
+    timestamp: formatTimestamp(ts),
+    message: `Build "${name}" → ${status}`,
+  });
+
+  const config = doc.config as Record<string, boolean | string> | undefined;
+  if (config) {
+    if (config.anti_fingerprint || config.antiFingerprint) {
+      events.push({ timestamp: formatTimestamp(ts), message: `Anti-fingerprint canvas noise injected for "${name}"` });
+    }
+    if (config.block_telemetry || config.blockTelemetry) {
+      events.push({ timestamp: formatTimestamp(ts), message: `Google telemetry endpoints blocked for "${name}"` });
+    }
+    if (config.vpn_tunnel || config.vpnIntegration) {
+      events.push({ timestamp: formatTimestamp(ts), message: `VPN tunnel established for "${name}"` });
+    }
+  }
+
+  if (status === "DONE" || status === "COMPLETE") {
+    events.push({ timestamp: formatTimestamp(ts), message: `✅ Build "${name}" completed — artifact ready for download` });
+  } else if (status === "FAILED") {
+    events.push({ timestamp: formatTimestamp(ts), message: `❌ Build "${name}" failed — check error logs` });
+  }
+
+  return events;
 }
 
 export function TelemetryStream() {
-  const [logs, setLogs] = useState<string[]>(() =>
-    Array.from({ length: 6 }, randomLog)
-  );
+  const [events, setEvents] = useState<TelemetryEvent[]>([
+    { timestamp: formatTimestamp(new Date().toISOString()), message: "Telemetry stream initialized — awaiting Firestore events..." },
+  ]);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setLogs((prev) => [...prev.slice(-15), randomLog()]);
-    }, 2500);
-    return () => clearInterval(interval);
+    const q = query(collection(db, "build_jobs"), orderBy("timestamp", "desc"), limit(10));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const allEvents: TelemetryEvent[] = [];
+      snapshot.docs.reverse().forEach((doc) => {
+        const data = doc.data();
+        allEvents.push(...jobToEvents(data));
+      });
+
+      if (allEvents.length > 0) {
+        setEvents(allEvents.slice(-20));
+      }
+    }, (error) => {
+      setEvents((prev) => [
+        ...prev,
+        { timestamp: formatTimestamp(new Date().toISOString()), message: `⚠ Firestore error: ${error.message}` },
+      ]);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
     if (ref.current) ref.current.scrollTop = ref.current.scrollHeight;
-  }, [logs]);
+  }, [events]);
 
   return (
     <div className="glass-card p-4 space-y-2">
-      <h3 className="text-xs font-mono tracking-widest uppercase text-muted-foreground">Telemetry Stream</h3>
+      <h3 className="text-xs font-mono tracking-widest uppercase text-muted-foreground">
+        Telemetry Stream <span className="text-neon-green animate-pulse-neon">● LIVE</span>
+      </h3>
       <div ref={ref} className="h-28 overflow-y-auto space-y-1 scrollbar-thin">
-        {logs.map((log, i) => (
+        {events.map((evt, i) => (
           <p key={i} className="telemetry-ticker">
-            <span className="text-muted-foreground/50 mr-2">›</span>
-            {log}
+            <span className="text-muted-foreground/50 mr-2 font-mono text-[10px]">{evt.timestamp}</span>
+            <span className="text-muted-foreground/50 mr-1">›</span>
+            {evt.message}
           </p>
         ))}
       </div>
