@@ -25,7 +25,22 @@ dist-ssr
 
 # Firebase
 src/docs/firebase-key.json
+backend/firebase-key.json
+orchestrator/firebase-key.json
 
 # Vercel
 .vercel
+
+# Python artifacts
+__pycache__/
+*.pyc
+venv/
+.env
+
+# Cloudflare
+.cloudflared/
+
+# OS
+.DS_Store
+Thumbs.db
 
