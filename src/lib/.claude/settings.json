@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/42195/.gemini/antigravity/scratch/forge-builder-suite/**)"
+    ]
+  }
+}

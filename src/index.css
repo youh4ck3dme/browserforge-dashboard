@@ -1,0 +1,150 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Fira+Code:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 216 28% 7%;
+    --foreground: 210 40% 92%;
+
+    --card: 215 25% 10%;
+    --card-foreground: 210 40% 92%;
+
+    --popover: 215 25% 10%;
+    --popover-foreground: 210 40% 92%;
+
+    --primary: 190 95% 50%;
+    --primary-foreground: 216 28% 7%;
+
+    --secondary: 215 20% 16%;
+    --secondary-foreground: 210 40% 85%;
+
+    --muted: 215 20% 14%;
+    --muted-foreground: 215 15% 55%;
+
+    --accent: 145 80% 45%;
+    --accent-foreground: 216 28% 7%;
+
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 215 20% 18%;
+    --input: 215 20% 18%;
+    --ring: 190 95% 50%;
+
+    --radius: 0.5rem;
+
+    --neon-blue: 190 95% 50%;
+    --neon-green: 145 80% 45%;
+    --neon-purple: 270 80% 60%;
+    --neon-orange: 25 95% 55%;
+
+    --glass-bg: 215 25% 10% / 0.6;
+    --glass-border: 215 20% 25% / 0.5;
+
+    --sidebar-background: 216 28% 6%;
+    --sidebar-foreground: 210 40% 75%;
+    --sidebar-primary: 190 95% 50%;
+    --sidebar-primary-foreground: 216 28% 7%;
+    --sidebar-accent: 215 20% 14%;
+    --sidebar-accent-foreground: 210 40% 92%;
+    --sidebar-border: 215 20% 15%;
+    --sidebar-ring: 190 95% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .font-mono {
+    font-family: 'Fira Code', monospace !important;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply rounded-lg border bg-card/60 backdrop-blur-xl;
+    border-color: hsl(var(--glass-border));
+    box-shadow: 0 0 20px hsl(var(--neon-blue) / 0.05), inset 0 1px 0 hsl(215 20% 30% / 0.2);
+  }
+
+  .neon-glow-blue {
+    box-shadow: 0 0 15px hsl(var(--neon-blue) / 0.4), 0 0 45px hsl(var(--neon-blue) / 0.15);
+  }
+
+  .neon-glow-green {
+    box-shadow: 0 0 15px hsl(var(--neon-green) / 0.4), 0 0 45px hsl(var(--neon-green) / 0.15);
+  }
+
+  .neon-text-blue {
+    color: hsl(var(--neon-blue));
+    text-shadow: 0 0 10px hsl(var(--neon-blue) / 0.5);
+  }
+
+  .neon-text-green {
+    color: hsl(var(--neon-green));
+    text-shadow: 0 0 10px hsl(var(--neon-green) / 0.5);
+  }
+
+  .launch-button {
+    @apply relative overflow-hidden rounded-lg px-8 py-4 font-bold text-lg tracking-wider uppercase;
+    background: linear-gradient(135deg, hsl(var(--neon-blue)), hsl(var(--neon-green)));
+    color: hsl(var(--background));
+    box-shadow: 0 0 20px hsl(var(--neon-blue) / 0.5), 0 0 60px hsl(var(--neon-green) / 0.2);
+    transition: all 0.3s ease;
+  }
+
+  .launch-button:hover {
+    box-shadow: 0 0 30px hsl(var(--neon-blue) / 0.7), 0 0 80px hsl(var(--neon-green) / 0.4);
+    transform: translateY(-1px);
+  }
+
+  .launch-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .pipeline-stage {
+    @apply px-3 py-1.5 rounded text-xs font-mono font-semibold tracking-wider;
+    background: hsl(var(--muted));
+    color: hsl(var(--muted-foreground));
+    border: 1px solid hsl(var(--border));
+    transition: all 0.5s ease;
+  }
+
+  .pipeline-stage.active {
+    background: hsl(var(--neon-blue) / 0.2);
+    color: hsl(var(--neon-blue));
+    border-color: hsl(var(--neon-blue) / 0.5);
+    box-shadow: 0 0 10px hsl(var(--neon-blue) / 0.3);
+  }
+
+  .pipeline-stage.done {
+    background: hsl(var(--neon-green) / 0.2);
+    color: hsl(var(--neon-green));
+    border-color: hsl(var(--neon-green) / 0.5);
+    box-shadow: 0 0 10px hsl(var(--neon-green) / 0.3);
+  }
+
+  .telemetry-ticker {
+    @apply font-mono text-xs;
+    color: hsl(var(--neon-green) / 0.8);
+  }
+
+  .code-block {
+    @apply rounded-lg p-4 font-mono text-sm overflow-auto;
+    background: hsl(216 28% 5%);
+    border: 1px solid hsl(var(--border));
+    color: hsl(var(--neon-green) / 0.9);
+  }
+}
