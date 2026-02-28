@@ -57,7 +57,7 @@ const Dashboard = () => {
         docs.slice(0, 10).forEach(d => {
           const config = d.data().config;
           if (config?.flags) {
-            const score = config.flags.reduce((acc: number, f: any) => acc + (f.enabled ? (f.securityBoost || 0) : 0), 20);
+            const score = config.flags.reduce((acc: number, f: { enabled?: boolean; securityBoost?: number }) => acc + (f.enabled ? (f.securityBoost || 0) : 0), 20);
             totalScore += score;
             counted++;
           }
