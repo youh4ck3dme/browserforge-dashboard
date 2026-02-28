@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db } from "../../lib/firebase";
 
 interface TelemetryEvent {
   timestamp: string;
