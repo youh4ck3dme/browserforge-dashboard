@@ -18,8 +18,9 @@ async function testConnection() {
       toast({ title: "Connection Failed", description: `${res.status} — ${body}`, variant: "destructive" });
       toast({ title: "Connection Failed", description: `Status ${res.status} ${res.statusText}`, variant: "destructive" });
     }
-  } catch (err: any) {
-    toast({ title: "Connection Error", description: err?.message || String(err), variant: "destructive" });
+  } catch (err: unknown) {
+    const error = err as Error;
+    toast({ title: "Connection Error", description: error?.message || String(error), variant: "destructive" });
   }
 }
 

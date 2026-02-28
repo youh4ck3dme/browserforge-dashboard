@@ -1,4 +1,4 @@
 // BrowserForge API configuration
 // TODO: Po nastavení HTTPS (Cloudflare Tunnel alebo nginx) zmeň na svoju HTTPS URL
 // Príklad: "https://xxxx.trycloudflare.com" alebo "https://api.tvoja-domena.com"
-export const API_BASE_URL = "https://tradition-defence-codes-workstation.trycloudflare.com";
+export const API_BASE_URL = "https://parallel-depend-rehabilitation-texas.trycloudflare.com";
