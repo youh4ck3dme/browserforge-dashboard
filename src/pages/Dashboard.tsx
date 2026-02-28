@@ -1,21 +1,80 @@
+import { useEffect, useState } from "react";
 import { LayoutDashboard, Server, ShieldCheck, Rocket, Activity } from "lucide-react";
+import { db } from "../lib/firebase";
+import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 
-const stats = [
-  { label: "Total Builds", value: "1,247", icon: Rocket, trend: "+12%" },
-  { label: "Active Nodes", value: "64", icon: Server, trend: "98% uptime" },
-  { label: "Security Score", value: "87", icon: ShieldCheck, trend: "Strong" },
-  { label: "Fleet Size", value: "12,500", icon: Activity, trend: "+340 this week" },
-];
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
 
-const recentBuilds = [
-  { id: "#1247", name: "CorpSecure v4.2", status: "COMPLETE", time: "2m ago" },
-  { id: "#1246", name: "KioskBrowser Pro", status: "COMPLETE", time: "14m ago" },
-  { id: "#1245", name: "DevForge Canary", status: "FAILED", time: "1h ago" },
-  { id: "#1244", name: "CorpSecure v4.1", status: "COMPLETE", time: "3h ago" },
-  { id: "#1243", name: "InternalTools Browser", status: "COMPLETE", time: "5h ago" },
-];
+function mapStatus(raw: string): "COMPLETE" | "FAILED" | "IN PROGRESS" {
+  if (raw === "DONE") return "COMPLETE";
+  if (raw === "FAILED") return "FAILED";
+  if (raw === "QUEUED" || raw.startsWith("BUILDING")) return "IN PROGRESS";
+  return "IN PROGRESS";
+}
+
+interface RecentBuild {
+  id: string;
+  name: string;
+  status: "COMPLETE" | "FAILED" | "IN PROGRESS";
+  time: string;
+}
+
+const statusStyle: Record<"COMPLETE" | "FAILED" | "IN PROGRESS", string> = {
+  COMPLETE: "bg-accent/10 text-accent",
+  FAILED: "bg-destructive/10 text-destructive",
+  "IN PROGRESS": "bg-primary/10 text-primary animate-pulse",
+};
 
 const Dashboard = () => {
+  const [totalBuilds, setTotalBuilds] = useState("—");
+  const [activeBuilds, setActiveBuilds] = useState("—");
+  const [recentBuilds, setRecentBuilds] = useState<RecentBuild[]>([]);
+
+  useEffect(() => {
+    const q = query(collection(db, "build_jobs"), orderBy("timestamp", "desc"));
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        setTotalBuilds(snap.size.toLocaleString());
+        const active = snap.docs.filter((d) => {
+          const s: string = d.data().status ?? "";
+          return s === "QUEUED" || s.startsWith("BUILDING");
+        }).length;
+        setActiveBuilds(String(active));
+        setRecentBuilds(
+          snap.docs.slice(0, 5).map((d) => {
+            const data = d.data();
+            return {
+              id: d.id.substring(0, 8).toUpperCase(),
+              name: data.config?.name ?? "Unknown",
+              status: mapStatus(data.status ?? ""),
+              time: data.timestamp ? timeAgo(data.timestamp) : "—",
+            };
+          })
+        );
+      },
+      () => {
+        // Firebase not configured — keep placeholder dashes
+      }
+    );
+    return unsub;
+  }, []);
+
+  const stats = [
+    { label: "Total Builds", value: totalBuilds, icon: Rocket, trend: "all time" },
+    { label: "Active Builds", value: activeBuilds, icon: Server, trend: "currently running" },
+    { label: "Security Score", value: "87", icon: ShieldCheck, trend: "Strong" },
+    { label: "Fleet Size", value: "12,500", icon: Activity, trend: "+340 this week" },
+  ];
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-3">
@@ -40,28 +99,26 @@ const Dashboard = () => {
       {/* Recent Builds */}
       <div className="glass-card p-4 space-y-3">
         <h2 className="text-xs font-mono tracking-widest uppercase text-muted-foreground">Recent Builds</h2>
-        <div className="space-y-2">
-          {recentBuilds.map((b) => (
-            <div key={b.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-xs text-muted-foreground">{b.id}</span>
-                <span className="text-sm text-foreground">{b.name}</span>
+        {recentBuilds.length === 0 ? (
+          <p className="text-xs text-muted-foreground font-mono py-4 text-center">No builds yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {recentBuilds.map((b) => (
+              <div key={b.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+                <div className="flex items-center gap-3">
+                  <span className="font-mono text-xs text-muted-foreground">{b.id}</span>
+                  <span className="text-sm text-foreground">{b.name}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${statusStyle[b.status]}`}>
+                    {b.status}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">{b.time}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <span
-                  className={`text-[10px] font-mono px-2 py-0.5 rounded ${
-                    b.status === "COMPLETE"
-                      ? "bg-accent/10 text-accent"
-                      : "bg-destructive/10 text-destructive"
-                  }`}
-                >
-                  {b.status}
-                </span>
-                <span className="text-[10px] text-muted-foreground">{b.time}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

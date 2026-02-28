@@ -1,0 +1,10 @@
+# Firebase credentials - NEVER commit this file
+firebase-key.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.env

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
-import { db } from "@/lib/firebase";
+import { db } from "../lib/firebase";
 import { collection, addDoc, onSnapshot, doc } from "firebase/firestore";
 
 export interface BuildFlag {
@@ -68,7 +68,7 @@ export const BrowserForgeProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const [pipeline, setPipeline] = useState<PipelineState>({ running: false, currentStage: -1 });
   const [buildResult, setBuildResult] = useState<BuildResult | null>(null);
-  const [apiUrl, setApiUrl] = useState("https://ff2f56d7-2009-41ce-8721-066a9f7949cd-00-18l59idrajyct.spock.replit.dev");
+  const [apiUrl, setApiUrl] = useState("https://tradition-defence-codes-workstation.trycloudflare.com");
 
   const setName = useCallback((name: string) => setConfig((c) => ({ ...c, name })), []);
   const setThemeColor = useCallback((color: string) => setConfig((c) => ({ ...c, themeColor: color })), []);
@@ -99,25 +99,35 @@ export const BrowserForgeProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
 
     try {
-      // 1. Create Job in Firestore (Job-Queue)
-      const docRef = await addDoc(collection(db, "build_jobs"), {
-        config: {
-          name: config.name,
-          theme_color: config.themeColor,
-          block_telemetry: config.flags.find((f) => f.id === "block_telemetry")?.enabled ?? false,
-        },
-        status: "QUEUED",
-        timestamp: new Date().toISOString()
+      // 1. Create Job via Orchestrator API (Replit)
+      const buildFlags: Record<string, boolean> = {};
+      config.flags.forEach(f => {
+        buildFlags[f.id] = f.enabled;
       });
 
+      const response = await fetch(`${apiUrl}/build`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: config.name,
+          theme_color: config.themeColor,
+          ...buildFlags
+        }),
+      });
+
+      if (!response.ok) throw new Error("API call failed");
+
+      const job = await response.json();
+      const jobId = job.id;
+
       setBuildResult({
-        id: docRef.id,
-        status: "QUEUED (Firestore)",
+        id: jobId,
+        status: "QUEUED (via API)",
         recipe: generateRecipe(config),
       });
 
-      // 2. Listen for Real-Time Updates from Replit/Build Farm via Firestore
-      onSnapshot(doc(db, "build_jobs", docRef.id), (snapshot) => {
+      // 2. Listen for Real-Time Updates from Firestore
+      onSnapshot(doc(db, "build_jobs", jobId), (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.data();
           setBuildResult((prev) => prev ? {
